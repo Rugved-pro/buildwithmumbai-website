@@ -13,11 +13,164 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+    .chat-bubble {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background-color: #007bff;
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    .chat-popup {
+        display: none; /* Hidden by default */
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        z-index: 1001;
+    }
+    .chat-popup.show {
+        display: flex;
+    }
+    .chat-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .chat-messages {
+        flex-grow: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .chat-message {
+        padding: 10px 15px;
+        border-radius: 20px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    .user-message {
+        background-color: #007bff;
+        color: white;
+        align-self: flex-end;
+    }
+    .bot-message {
+        background-color: #f1f1f1;
+        color: black;
+        align-self: flex-start;
+    }
+    .chat-form {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+    }
+    .chat-form input {
+        flex-grow: 1;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 10px;
+        margin-right: 10px;
+    }
+    .chat-form button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
+  </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    <div class="chat-bubble" id="chat-bubble">
+    <span>🤖</span>
+</div>
+
+<div class="chat-popup" id="chat-popup">
+    <div class="chat-header">BuildWithMumbai Assistant</div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="chat-message bot-message">Hello! How can I help you with BuildWithMumbai today?</div>
+    </div>
+    <form class="chat-form" id="chat-form">
+        <input type="text" id="chat-input" placeholder="Type a message..." required>
+        <button type="submit">Send</button>
+    </form>
+</div>
+<script>
+    const chatBubble = document.getElementById('chat-bubble');
+    const chatPopup = document.getElementById('chat-popup');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    // Toggle chat popup visibility
+    chatBubble.addEventListener('click', () => {
+        chatPopup.classList.toggle('show');
+    });
+
+    // Handle form submission
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMessage = chatInput.value.trim();
+        if (!userMessage) return;
+
+        // Display user's message
+        addMessage(userMessage, 'user-message');
+        chatInput.value = '';
+
+        // Get bot's response
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: userMessage }),
+            });
+
+            const data = await response.json();
+            addMessage(data.response, 'bot-message');
+
+        } catch (error) {
+            console.error("Error:", error);
+            addMessage("Sorry, something went wrong. Please try again.", 'bot-message');
+        }
+    });
+
+    function addMessage(message, className) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', className);
+        messageElement.textContent = message;
+        chatMessages.appendChild(messageElement);
+        // Scroll to the latest message
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  </script>
   </body>
 </html>
